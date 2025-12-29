@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% block title %}Trade Analyzer{% endblock %}
+{% block content %}
+
+      <section>
+        <h2>Analyze Trade</h2>
+        <form id="trade-form" method="post" action="/trade/analyze" class="form-grid">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <label class="lbl">Against Roster</label>
+          <div id="other-roster-dropdown" class="dropdown">
+            <input type="hidden" name="other_roster_id" id="other-roster-id" value="">
+            <button type="button" class="dropdown-toggle" id="other-roster-toggle">
+              <span id="other-roster-label">Select roster…</span>
+              <span aria-hidden="true">▾</span>
+            </button>
+            <div class="dropdown-menu" id="other-roster-menu" role="listbox" aria-labelledby="other-roster-toggle">
+              <div class="dropdown-group">My Saved Rosters</div>
+              {% for r in my_rosters %}
+                <button type="button" class="dropdown-item" role="option" data-value="{{ r.id }}" data-label="{{ r.name }}">{{ r.name }}</button>
+              {% endfor %}
+              <div class="dropdown-group">Public Rosters</div>
+              {% for r in public_rosters %}
+                <button type="button" class="dropdown-item" role="option" data-value="{{ r.id }}" data-label="{{ r.name }} ({{ r.owner }})">{{ r.name }} ({{ r.owner }})</button>
+              {% endfor %}
+            </div>
+          </div>
+          <label class="lbl">Give</label>
+          <div id="give-multiselect" class="multiselect-dropdown">
+            <input type="hidden" name="give" id="give-players" class="multiselect-hidden-input" value="">
+            <div class="multiselect-display" data-placeholder="Select players...">Select players...</div>
+            <div class="multiselect-menu">
+              <div class="multiselect-search-wrapper">
+                <input type="search" class="multiselect-search" placeholder="Search players...">
+              </div>
+              <div class="multiselect-loading">Loading…</div>
+              <div class="multiselect-options"></div>
+            </div>
+          </div>
+          <label class="lbl">Receive</label>
+          <div id="receive-multiselect" class="multiselect-dropdown">
+            <input type="hidden" name="receive" id="receive-players" class="multiselect-hidden-input" value="">
+            <div class="multiselect-display" data-placeholder="Select players...">Select players...</div>
+            <div class="multiselect-menu">
+              <div class="multiselect-search-wrapper">
+                <input type="search" class="multiselect-search" placeholder="Search players...">
+              </div>
+              <div class="multiselect-loading">Loading…</div>
+              <div class="multiselect-options"></div>
+            </div>
+          </div>
+          <div></div>
+          <button type="submit">Analyze Trade</button>
+        </form>
+        <p class="muted" style="margin-top:8px;">Tip: use the dropdown lists to select multiple players; we auto-fill the form.</p>
+      </section>
+
+      {% if latest_result %}
+      {% set decision = 'Accept' if latest_result.delta > 0 else ('Neutral' if latest_result.delta == 0 else 'Reject') %}
+      <section>
+        <h2>Trade Analysis</h2>
+        <div class="card analysis-card">
+          <div class="card-header" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="status-badge {{ decision|lower }}">{{ decision }}</span>
+              <span class="muted">vs {{ latest_result.other_roster }}</span>
+            </div>
+            <div class="muted">{{ latest_result.rationale }}</div>
+          </div>
+
+          <div class="metrics-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px;">
+            <div class="metric-tile">
+              <div class="metric-label">Starter Total (Before)</div>
+              <div class="metric-value">{{ '%.2f'|format(latest_result.before_strength) }}</div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-label">Starter Total (After)</div>
+              <div class="metric-value">{{ '%.2f'|format(latest_result.after_strength) }}</div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-label">Delta</div>
+              <div class="metric-value {{ 'delta-pos' if latest_result.delta > 0 else ('delta-zero' if latest_result.delta == 0 else 'delta-neg') }}">{{ '%.2f'|format(latest_result.delta) }}</div>
+            </div>
+          </div>
+
+          <div class="chip-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px;">
+            <div>
+              <div class="section-title">Give</div>
+              <div class="chip-group">
+                {% for n in latest_result.give %}
+                  <span class="chip chip-give">{{ n }}</span>
+                {% endfor %}
+                {% if latest_result.give|length == 0 %}
+                  <span class="muted">None</span>
+                {% endif %}
+              </div>
+            </div>
+            <div>
+              <div class="section-title">Receive</div>
+              <div class="chip-group">
+                {% for n in latest_result.receive %}
+                  <span class="chip chip-receive">{{ n }}</span>
+                {% endfor %}
+                {% if latest_result.receive|length == 0 %}
+                  <span class="muted">None</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="columns" style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+            <div>
+              <div class="section-title">Starter Optimization</div>
+              {% if latest_result.suggestions.starter_optimization %}
+                <ul class="list-clean">
+                  {% for s in latest_result.suggestions.starter_optimization %}
+                    <li>{{ s }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">No starter swaps recommended.</div>
+              {% endif %}
+            </div>
+            <div>
+              <div class="section-title">Positional Improvement</div>
+              {% if latest_result.suggestions.positional_improvement %}
+                <ul class="list-clean">
+                  {% for s in latest_result.suggestions.positional_improvement %}
+                    <li>{{ s }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">No material position shifts detected.</div>
+              {% endif %}
+            </div>
+
+            <div>
+              <div class="section-title">Depth & Bench Strategy</div>
+              {% if latest_result.suggestions.depth_and_bench %}
+                <ul class="list-clean">
+                  {% for s in latest_result.suggestions.depth_and_bench %}
+                    <li>{{ s }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">Bench composition looks balanced.</div>
+              {% endif %}
+            </div>
+            <div>
+              <div class="section-title">Positional Need Warnings</div>
+              {% if latest_result.suggestions.positional_need_warnings %}
+                <ul class="list-clean">
+                  {% for s in latest_result.suggestions.positional_need_warnings %}
+                    <li>{{ s }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">No lineup warnings.</div>
+              {% endif %}
+            </div>
+
+            <div>
+              <div class="section-title">Unfavorable Trade Recommendations</div>
+              {% if latest_result.suggestions.unfavorable_trade_recos %}
+                <ul class="list-clean">
+                  {% for s in latest_result.suggestions.unfavorable_trade_recos %}
+                    <li>{{ s }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">No recovery recommendations needed.</div>
+              {% endif %}
+            </div>
+            <div>
+              <div class="section-title">Neutral Trade Suggestions</div>
+              {% if latest_result.suggestions.neutral_trade_suggestions %}
+                <ul class="list-clean">
+                  {% for s in latest_result.suggestions.neutral_trade_suggestions %}
+                    <li>{{ s }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="muted">Not a neutral outcome.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+      <section>
+        <h2>Manage My Rosters</h2>
+        {% if my_rosters and my_rosters|length > 0 %}
+          <div class="card" style="overflow:auto;">
+            <table class="table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th class="ta-left">Name</th>
+                  <th class="ta-left">Status</th>
+                  <th class="ta-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in my_rosters %}
+                  <tr>
+                    <td class="ta-left">{{ r.name }}</td>
+                    <td class="ta-left">{{ 'Listed' if r.is_public else 'Private' }}</td>
+                    <td class="ta-left">
+                      {% if r.is_public %}
+                        <form method="post" action="/rosters/{{ r.id }}/unlist" style="display:inline;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                          <button type="submit">Unlist</button>
+                        </form>
+                      {% else %}
+                        <form method="post" action="/rosters/{{ r.id }}/list" style="display:inline;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                          <button type="submit">List for Trade</button>
+                        </form>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="card">No saved rosters yet. Save your current roster from the dashboard.</div>
+        {% endif %}
+      </section>
+
+      <section>
+        <h2>Recent Trade History</h2>
+        {% if recent_trades and recent_trades|length > 0 %}
+          <div class="card" style="overflow:auto;">
+            <table class="table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th class="ta-left">Date</th>
+                  <th class="ta-left">Other Roster</th>
+                  <th class="ta-left">Give</th>
+                  <th class="ta-left">Receive</th>
+                  <th class="ta-right">Δ</th>
+                  <th class="ta-left">Decision</th>
+                  <th class="ta-left">AI</th>
+                 </tr>
+              </thead>
+              <tbody>
+                {% for t in recent_trades %}
+                  {% set decision = 'Accept' if t.delta > 0 else ('Neutral' if t.delta == 0 else 'Reject') %}
+                  <tr>
+                    <td class="ta-left">{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="ta-left">{{ t.other_roster }}</td>
+                    <td class="ta-left">{{ t.give|join(', ') }}</td>
+                    <td class="ta-left">{{ t.receive|join(', ') }}</td>
+                    <td class="ta-right">
+                      <span class="{{ 'delta-pos' if t.delta > 0 else ('delta-zero' if t.delta == 0 else 'delta-neg') }}">{{ '%.2f'|format(t.delta) }}</span>
+                    </td>
+                    <td class="ta-left">
+                      <span class="status-badge {{ decision|lower }}">{{ decision }}</span>
+                    </td>
+
+                    <td class="ta-left">
+                     <a href="{{ url_for('trade_ai_explain', report_id=t.id) }}" class="btn btn-secondary">
+                         AI Explain
+                      </a>
+                    </td>
+
+
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="card">No trade history yet. Analyze a trade to see results here.</div>
+        {% endif %}
+      </section>
+{% endblock %}

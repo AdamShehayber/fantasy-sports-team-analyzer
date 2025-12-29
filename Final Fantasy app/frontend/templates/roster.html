@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Roster{% endblock %}
+{% block content %}
+
+      <input type="hidden" id="global-csrf" value="{{ csrf_token() }}"/>
+
+      <section>
+        <h2>Search & Add</h2>
+        <div class="form-grid">
+          <label class="lbl">Search</label>
+          <input id="search-input" name="q" placeholder="Type at least 3 characters"/>
+          <label class="lbl">Position</label>
+          <select id="search-position">
+            <option value="">Any</option>
+            <option>QB</option>
+            <option>RB</option>
+            <option>WR</option>
+            <option>TE</option>
+            <option>K</option>
+            <option>D/ST</option>
+          </select>
+          <label class="lbl">Team</label>
+          <input id="search-team" placeholder="e.g., KC"/>
+        </div>
+        <div id="search-status" class="muted" style="margin:8px 0;">Type 3+ letters to search players</div>
+        <table class="data-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th class="ta-left">Name</th>
+              <th class="ta-center">Pos</th>
+              <th class="ta-center">Team</th>
+              <th class="ta-right">Projection</th>
+              <th class="ta-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="search-results-body"></tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Current Roster</h2>
+        <ul id="roster-list" class="roster-list">
+          {% for p in players %}
+            <li class="roster-item">
+              <span class="player-name">{{ p.name }}</span>
+              <span class="player-pts">{{ '%.2f'|format(p.display_projection or p.projection or 0) }} pts</span>
+              <form method="post" action="/players/{{ p.id }}/toggle" class="roster-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit">{{ 'Move to Bench' if p.is_starter else 'Move to Starter' }}</button> 
+              </form>
+            </li>
+          {% else %}
+            <li class="roster-item">No players yet.</li>
+          {% endfor %}
+        </ul>
+        <div class="roster-actions" style="margin-top:12px; display:flex; gap:12px;">
+          <form id="clear-all-form" method="post" action="/players/clear">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit">Clear All</button>
+          </form>
+          <form method="post" action="/rosters/save">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="text" name="roster_name" placeholder="Enter Roster name" class="themed-input"/>
+            <button type="submit">Save Current Roster</button>
+          </form>
+        </div>
+      </section>
+{% endblock %}

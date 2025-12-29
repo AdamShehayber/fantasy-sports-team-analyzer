@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+  <section>
+    <h2>Team Metrics</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Starter Strength</div>
+        <div class="value">{{ '%.2f'|format(starter_strength or 0) }}</div>
+      </div>
+      <div class="card">
+        <div class="label">Bench Strength</div>
+        <div class="value">{{ '%.2f'|format(bench_strength or 0) }}</div>
+      </div>
+      <div class="card">
+        <div class="label">Position Breakdown</div>
+        <ul class="breakdown">
+          {% for pos, scores in breakdown.items() %}
+            <li><strong>{{ pos }}</strong>: S: {{ '%.2f'|format(scores.starter) }}, B: {{ '%.2f'|format(scores.bench) }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="card">
+        <div class="label">Position Limits</div>
+        <ul class="breakdown">
+          {% for pos, limit in position_limits.items() %}
+            <li><strong>{{ pos }}</strong>: {{ limit }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <input type="hidden" id="global-csrf" value="{{ csrf_token() }}"/>
+
+  <!-- Reordered: Current Roster comes before Search & Add -->
+  <section>
+    <h2>Current Roster</h2>
+    <ul id="roster-list" class="roster-list">
+      {% for p in players %}
+        <li class="roster-item">
+          <span class="player-name">{{ p.name }}</span>
+          <span class="player-pts">{{ '%.2f'|format(p.display_projection or p.projection or 0) }} pts</span>
+          <form method="post" action="/players/{{ p.id }}/toggle" class="roster-toggle-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit">{{ 'Move to Bench' if p.is_starter else 'Move to Starter' }}</button>
+          </form>
+        </li>
+      {% else %}
+        <li class="roster-item">No players yet.</li>
+      {% endfor %}
+    </ul>
+    <div class="roster-actions" style="margin-top:12px; display:flex; gap:12px;">
+      <form id="clear-all-form" method="post" action="/players/clear">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit">Clear All</button>
+      </form>
+      <form method="post" action="/rosters/save">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="text" name="roster_name" placeholder="Enter Roster name" class="themed-input"/>
+        <button type="submit">Save Current Roster</button>
+      </form>
+    </div>
+  </section>
+
+  <section>
+    <h2>Search & Add</h2>
+    <div class="form-grid">
+      <label class="lbl">Search</label>
+      <input id="search-input" name="q" placeholder="Type at least 3 characters"/>
+      <label class="lbl">Position</label>
+      <select id="search-position">
+        <option value="">Any</option>
+        <option>QB</option>
+        <option>RB</option>
+        <option>WR</option>
+        <option>TE</option>
+        <option>K</option>
+        <option>D/ST</option>
+      </select>
+      <label class="lbl">Team</label>
+      <input id="search-team" placeholder="e.g., KC"/>
+      <div></div>
+      <button id="search-button" type="button">Search</button>
+    </div>
+    <div id="search-status" class="muted" style="margin:8px 0;">Enter a name and click Search</div>
+    <table class="data-table" style="width:100%;">
+      <thead>
+        <tr>
+          <th class="ta-left">Name</th>
+          <th class="ta-center">Pos</th>
+          <th class="ta-center">Team</th>
+          <th class="ta-right">Projection</th>
+          <th class="ta-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="search-results-body"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Watchlist</h2>
+    <form id="watchlist-form" method="post" action="/watchlist/add" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <label class="lbl">Player Name</label>
+      <input id="watchlist-player" name="name" placeholder="e.g., Justin Jefferson"/>
+      <div></div>
+      <button type="submit">Add</button>
+    </form>
+    <ul id="watchlist-items" style="margin-top:12px;">
+      {% for w in watchlist_items %}
+        <li>{{ w.name }}{% if w.position %} ({{ w.position }}){% endif %}{% if w.team %} - {{ w.team }}{% endif %}</li>
+      {% else %}
+        <li>No players yet.</li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endblock %}

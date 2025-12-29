@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %} — Fantasy Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    {% block head_scripts %}{% endblock %}
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">Fantasy Analyzer</div>
+        <nav class="main-nav">
+          {% if is_logged_in %}
+            <a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/trade" class="{% if request.path == '/trade' %}active{% endif %}">Trade</a>
+            <a href="/reports" class="{% if request.path == '/reports' %}active{% endif %}">Reports</a>
+            <a href="/charts" class="{% if request.path == '/charts' %}active{% endif %}">Charts</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">Settings</a>
+            <a href="/logout">Logout</a>
+          {% else %}
+            <a href="/login" class="{% if request.path == '/login' %}active{% endif %}">Login</a>
+            <a href="/register" class="{% if request.path == '/register' %}active{% endif %}">Register</a>
+          {% endif %}
+        </nav>
+        {% if is_logged_in and user_email %}
+          <div class="user">{{ user_email }}</div>
+        {% endif %}
+      </header>
+      <div class="content">
+        <div class="page-header">
+          <h1>{% block page_heading %}{{ self.title() }}{% endblock %}</h1>
+        </div>
+        <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+          {% block content %}{% endblock %}
+
+    <div id="toast" class="toast" style="display:none"></div>
+    <div id="modal-backdrop" class="modal-backdrop" style="display:none"></div>
+    <div id="modal" class="modal modal-info" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="display:none">
+      <div class="modal-header"><span id="modal-title">Notice</span></div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-actions">
+        <button type="button" id="modal-close">Close</button>
+      </div>
+    </div>
+        </main>
+      </div>
+    </div>
+    {% block footer_scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+  </body>
+</html>

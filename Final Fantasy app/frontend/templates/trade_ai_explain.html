@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}AI Trade Explanation{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>AI Trade Explanation</h2>
+
+  <p><strong>Other roster:</strong> {{ trade.other_roster }}</p>
+  <p><strong>Give:</strong> {{ trade.give | join(', ') }}</p>
+  <p><strong>Receive:</strong> {{ trade.receive | join(', ') }}</p>
+
+  <p>
+    <strong>Before:</strong> {{ '%.2f'|format(trade.before_strength) }}
+    &nbsp; | &nbsp;
+    <strong>After:</strong> {{ '%.2f'|format(trade.after_strength) }}
+    &nbsp; | &nbsp;
+    <strong>Δ:</strong> {{ '%.2f'|format(trade.delta) }}
+  </p>
+
+  <p><strong>App verdict:</strong> {{ trade.rationale }}</p>
+
+  <hr />
+
+  <h3>AI Insights</h3>
+  <p>{{ ai_text }}</p>
+
+  <a href="{{ url_for('trade_page') }}" class="btn btn-secondary">
+    ⬅ Back to Trade Analyzer
+  </a>
+</section>
+{% endblock %}

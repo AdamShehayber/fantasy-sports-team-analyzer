@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Watchlist{% endblock %}
+{% block content %}
+
+      <section>
+        <h2>Add to Watchlist</h2>
+        <form id="watchlist-form" method="post" action="/watchlist/add" class="form-grid">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <label class="lbl">Player Name</label>
+          <input id="watchlist-player" name="name" placeholder="e.g., Justin Jefferson"/>
+          <div></div>
+          <button type="submit">Add</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Current Watchlist</h2>
+        <ul id="watchlist-items">
+          {% for w in watchlist_items %}
+            <li>{{ w.name }}{% if w.position %} ({{ w.position }}){% endif %}{% if w.team %} - {{ w.team }}{% endif %}</li>
+          {% else %}
+            <li>No players yet.</li>
+          {% endfor %}
+        </ul>
+      </section>
+{% endblock %}

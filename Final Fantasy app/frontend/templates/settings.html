@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+
+      <section>
+        <h2>Live Controls</h2>
+        <form method="post" action="/live/settings" class="form-grid">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <label class="lbl">Season</label>
+          <select name="season" class="themed-select">
+            {% set cur = season %}
+            {% for y in [cur-1, cur, cur+1] %}
+              <option value="{{ y }}" {% if y == season %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+          <label class="lbl">Week</label>
+          <select name="week" class="themed-select">
+            {% for w in range(1,19) %}
+              <option value="{{ w }}" {% if w == week %}selected{% endif %}>{{ w }}</option>
+            {% endfor %}
+          </select>
+          <div class="toggle-field">
+            <input id="use-live" type="checkbox" name="use_live" {% if use_live %}checked{% endif %}>
+            <label for="use-live" class="toggle-label">Use Live Projections</label>
+          </div>
+          <div></div>
+          <button type="submit">Save Live Settings</button>
+        </form>
+        <div class="live-controls-actions" style="margin-top:8px; display:flex; align-items:center; gap:12px;">
+          <form method="post" action="/stats/sync">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit">Refresh Now</button>
+          </form>
+          <small class="cache-indicator">Live cache: {{ (live_cache_age ~ ' min ago') if live_cache_age is not none else 'n/a' }}</small>
+        </div>
+      </section>
+
+      <section>
+        <h2>League Settings</h2>
+        <form method="post" action="/league/settings" class="form-grid">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <label class="lbl">Scoring Type</label>
+          <select name="scoring_type" class="themed-select">
+            <option value="Standard" {% if league_settings and league_settings.scoring_type == "Standard" %}selected{% endif %}>Standard</option>
+            <option value="PPR" {% if league_settings and league_settings.scoring_type == "PPR" %}selected{% endif %}>PPR</option>
+            <option value="Half-PPR" {% if league_settings and league_settings.scoring_type == "Half-PPR" %}selected{% endif %}>Half-PPR</option>
+          </select>
+          <label class="lbl">Teams</label>
+          <input name="teams" type="number" value="{{ league_settings.teams if league_settings else 12 }}" min="4" max="20">
+          <label class="lbl">QB Slots</label>
+          <input name="qb_slots" type="number" value="{{ league_settings.qb_slots if league_settings else 1 }}" min="1" max="3">
+          <label class="lbl">RB Slots</label>
+          <input name="rb_slots" type="number" value="{{ league_settings.rb_slots if league_settings else 2 }}" min="1" max="5">
+          <label class="lbl">WR Slots</label>
+          <input name="wr_slots" type="number" value="{{ league_settings.wr_slots if league_settings else 2 }}" min="1" max="5">
+          <label class="lbl">TE Slots</label>
+          <input name="te_slots" type="number" value="{{ league_settings.te_slots if league_settings else 1 }}" min="1" max="3">
+          <label class="lbl">FLEX Slots</label>
+          <input name="flex_slots" type="number" value="{{ league_settings.flex_slots if league_settings else 1 }}" min="0" max="3">
+          <label class="lbl">K Slots</label>
+          <input name="k_slots" type="number" value="{{ league_settings.k_slots if league_settings else 1 }}" min="0" max="2">
+          <label class="lbl">D/ST Slots</label>
+          <input name="d_st_slots" type="number" value="{{ league_settings.d_st_slots if league_settings else 1 }}" min="0" max="2">
+          <div></div>
+          <button type="submit">Save Settings</button>
+        </form>
+      </section>
+{% endblock %}

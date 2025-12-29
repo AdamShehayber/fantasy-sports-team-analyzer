@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+
+      <section>
+        <h2>Export Team Report</h2>
+        <div class="grid">
+          <form method="get" action="/reports/download" class="card" style="display:flex; align-items:center; gap:10px;">
+            <input type="hidden" name="format" value="csv"/>
+            <button type="submit">Download CSV</button>
+            <small>Includes roster and summary.</small>
+          </form>
+          <form method="get" action="/reports/download" class="card" style="display:flex; align-items:center; gap:10px;">
+            <input type="hidden" name="format" value="pdf"/>
+            <button type="submit">Download PDF</button>
+            <small>Printable team report.</small>
+          </form>
+        </div>
+      </section>
+
+      <section>
+        <h2>Export Roster CSV</h2>
+        <form method="get" action="/export/csv/roster" class="card" style="display:flex; align-items:center; gap:10px;">
+          <button type="submit">Download CSV</button>
+          <small>Only roster rows as CSV.</small>
+        </form>
+      </section>
+{% endblock %}
